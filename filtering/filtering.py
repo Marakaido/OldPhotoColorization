@@ -33,6 +33,10 @@ def vignette(img, sigma):
 
     return img_tmp
 
+def monochrome(img):
+    return cv.cvtColor(img, cv.COLOR_RGB2GRAY)
+    
+
 def opencv_artifacts(img,artifact_nr,dil_nr):
     # this one sucks, but leaving it here just in case
 
