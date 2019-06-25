@@ -102,3 +102,6 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+
+pytorch-CycleGAN-and-pix2pix/datasets/
