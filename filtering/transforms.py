@@ -113,35 +113,4 @@ def process_img(img):
 
     return img
 
-def main():
-
-    # stupid workaround to load actual existing images
-    # some are corrupted but all of them start with . - maybe thumbnails or smth
-    imgname = '.'
-    while (imgname[0] == '.'):
-        imgname = np.random.choice(os.listdir('train/'))
-
-    img_path = 'train/' + imgname
-    img = cv.imread(img_path)
-
-    print("Loaded image:", img_path)
-    cv.imshow('original',img)
-    cv.waitKey()
-
-    print("Image shape:", img.shape)
-
-    img = process_img(img)
-
-    #cv.imshow('filtered with opencv',img_f)
-    cv.imshow('filtered + dust',img)
-
-    cv.waitKey()
-
-    cv.imwrite(str(imgname)[:-4]+'_filtered.jpg',img)
-    print('Written to: '+str(imgname)[:-4]+'_filtered.jpg')
-
-if __name__ == '__main__':
-    main()
-
-
 #def white_streaks(img):
