@@ -2,6 +2,15 @@ import cv2 as cv
 import numpy as np
 import os
 
+VIGNETTE_PROB = 0.3
+VIGNETTE_SIGMA = 200
+OVERLAY_MAX_STRENGTH = 0.4
+GRAY_PROB = 0.6
+SEPIA_COL_FACTOR = 0.2
+SEPIA_BRIGHT_FACTOR = 0.1
+
+def grey(img):
+    return cv.cvtColor(img, cv.COLOR_RGB2GRAY)
 
 def sepia(img, color_factor, brightness_factor):
     # create basic sepia filter kernel
@@ -34,63 +43,22 @@ def vignette(img, sigma):
 
     return img_tmp
 
-def grey(img):
-    return cv.cvtColor(img, cv.COLOR_RGB2GRAY)
-    
-
-def opencv_artifacts(img,artifact_nr,dil_nr):
-    # this one sucks, but leaving it here just in case
-
-    mask = np.zeros(img.shape)
-
-    loc_x = np.random.randint(0,img.shape[0],artifact_nr)
-    loc_y = np.random.randint(0,img.shape[1],artifact_nr)
-
-    for i in range(artifact_nr):
-        mask[loc_x[i],loc_y[i]] = np.random.rand()
-
-    for i in range(dil_nr):
-
-        # select a patch of size between 3 and 35 px in each dimension
-        # and get location of patch
-        patch_size = np.random.randint(3,35,2)
-        patch_loc_x = np.random.randint(0,img.shape[0]-patch_size[0])
-        patch_loc_y = np.random.randint(0,img.shape[1]-patch_size[1])
-
-        # apply dilation at this position
-        patch = mask[patch_loc_x:patch_loc_x+patch_size[0], patch_loc_y:patch_loc_y+patch_size[1]]
-        kernel = np.ones((3,3)) # not sure if changing this will do anything
-
-        # apply dilation to patch
-        patch = cv.dilate(patch, kernel)
-
-        # blur patch with not necessarily quadr kernel in order to smear patches
-        k_x = np.random.randint(3,max(33,patch_size[0]))
-        k_y = np.random.randint(3,max(33,patch_size[1]))
-        patch = cv.blur(patch,(k_x,k_y))
-
-        mask[patch_loc_x:patch_loc_x+patch_size[0], patch_loc_y:patch_loc_y+patch_size[1]] = patch
-
-    mask *= 1.5
-
-
-    #cv.imshow('mask',mask)
-
-    return np.array(img + (mask*255), dtype=np.uint8)
-
-def overlay_artifacts(img):
+def overlay_artifacts(img, strength):
     # puts random dust image over image
     # todo: maybe add rotation back in
     # (but would require new cropping to get rid of black boundaries)
     # possible: mirroring of image
 
     # choose random dust image out of those provided in folder
-    dust_path = 'dust/' + np.random.choice(os.listdir('dust/'))
+    if os.getcwd()[-9:] != "filtering":
+        dust_path = 'filtering/dust/' + np.random.choice(os.listdir('filtering/dust/'))
+    else:
+        dust_path = 'dust/' + np.random.choice(os.listdir('dust/'))
     # read out only alpha channel (3) so opacity will be understood as grayscale
     dust_img = cv.imread(dust_path, flags=-1)[:,:,3]
 
     # make less prominent by division by 2, change int range to avoid problems
-    dust_img = np.array(dust_img/2,dtype=np.uint16)
+    dust_img = np.array(dust_img*strength,dtype=np.uint16)
 
     dust_dims = dust_img.shape
     img_dims = img.shape
@@ -112,9 +80,10 @@ def overlay_artifacts(img):
     # cut out patch
     patch = dust_img[loc_x:loc_x + patch_size_x, loc_y:loc_y + patch_size_y]
 
-    # rotation
-    #M = cv.getRotationMatrix2D((patch_size_x/2,patch_size_y/2),np.random.randint(0,10),1)
-    #patch = cv.warpAffine(patch,M,(patch_size_x,patch_size_y))
+    # potential mirroring/rotation
+    flipcode = np.random.randint(-1,3)
+    if flipcode != 2:
+        patch = cv.flip(patch,flipcode)
 
     # resize
     patch = cv.resize(patch,(img_dims[1],img_dims[0]))
@@ -128,6 +97,19 @@ def overlay_artifacts(img):
     img[:,:,0] += patch
     img[:,:,1] += patch
     img[:,:,2] += patch
+
+    return img
+
+def process_img(img):
+    if np.random.rand() < VIGNETTE_PROB:
+        img = vignette(img,VIGNETTE_SIGMA)
+
+    img = overlay_artifacts(img, np.random.rand() * OVERLAY_MAX_STRENGTH)
+
+    if np.random.rand() < GRAY_PROB:
+        img = grey(img)
+    else:
+        img = sepia(img, SEPIA_COL_FACTOR, SEPIA_BRIGHT_FACTOR)
 
     return img
 
@@ -148,22 +130,18 @@ def main():
 
     print("Image shape:", img.shape)
 
-    # apply filters
-    img = sepia(img, 0.2, 0.2)
-    img = vignette(img,200)
-    #img_f = opencv_artifacts(img,50,300)
-    img_f = overlay_artifacts(img)
+    img = process_img(img)
 
     #cv.imshow('filtered with opencv',img_f)
-    cv.imshow('filtered + dust',img_f)
+    cv.imshow('filtered + dust',img)
 
     cv.waitKey()
 
-    cv.imwrite(str(imgname)[:-4]+'_filtered.jpg',img_f)
+    cv.imwrite(str(imgname)[:-4]+'_filtered.jpg',img)
     print('Written to: '+str(imgname)[:-4]+'_filtered.jpg')
 
 if __name__ == '__main__':
     main()
 
 
-def white_streaks(img):
+#def white_streaks(img):
