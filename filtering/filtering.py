@@ -2,6 +2,7 @@ import cv2 as cv
 import numpy as np
 import os
 
+
 def sepia(img, color_factor, brightness_factor):
     # create basic sepia filter kernel
     sepia = np.array([[0.131,0.534,0.272]
@@ -33,7 +34,7 @@ def vignette(img, sigma):
 
     return img_tmp
 
-def monochrome(img):
+def grey(img):
     return cv.cvtColor(img, cv.COLOR_RGB2GRAY)
     
 
@@ -163,3 +164,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+def white_streaks(img):
