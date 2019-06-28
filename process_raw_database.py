@@ -1,20 +1,25 @@
 import glob
 import random
 import sys
-import PIL
-from PIL import Image
+import cv2
+import filtering
 
 folder = sys.argv[1]
 
 for t in ['train', 'test', 'val']:
     print(f'Processing folder {t}...')
-    images = glob.glob(f'{folder}/{t}/*.jpg')
+    images = sorted(glob.glob(f'{folder}/{t}/*.jpg'))
     for i, image in enumerate(images):
         name = f'{i}.jpg'
-        with open(image, 'rb') as file:
-            print(f'{image} --> {name}')
-            img = Image.open(file).resize((256,256), resample=PIL.Image.LANCZOS)
-            # Save original (ground truth) image
-            img.save(f'A/{t}/{name}')
-            # Save the transformed image
-            img.save(f'B/{t}/{name}')
+        print(f'{image} --> {name}')
+        img = cv2.imread(image)
+        img = cv2.resize(img, (256,256))
+        
+        # Save original (ground truth) image
+        cv2.imwrite(f'A/{t}/{name}', img)
+        
+        # Transform image
+        
+
+        # Save the transformed image
+        cv2.imwrite(f'B/{t}/{name}', img)
