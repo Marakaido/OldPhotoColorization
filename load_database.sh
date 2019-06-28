@@ -1,8 +1,6 @@
 #!/bin/bash
 # Usage:
-# bash load_database.sh target [-0]
-#   target - destination folder
-#   -0 - optionally turn off data download
+# bash load_database.sh raw_data_folder target_folder
 
 RAW_DATA_DIR=$1
 
@@ -17,9 +15,11 @@ mkdir B/train
 mkdir B/test
 mkdir B/val
 
-python load_database.py $RAW_DATA_DIR
+python process_raw_database.py $RAW_DATA_DIR
 
-python pytorch-CycleGAN-and-pix2pix/datasets/combine_A_and_B.py --fold_A A --fold_B B --fold_AB $TARGET_DIR
+rm -rf $2
+mkdir $2
+python pytorch-CycleGAN-and-pix2pix/datasets/combine_A_and_B.py --fold_A A --fold_B B --fold_AB $2
 
 rm -rf A
 rm -rf B
