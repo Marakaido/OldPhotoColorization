@@ -4,30 +4,7 @@
 #   target - destination folder
 #   -0 - optionally turn off data download
 
-RAW_DATA_DIR=old-photos-raw-dataset
-TARGET_DIR=$1
-
-if [ $# = 2 ]; then
-    mkdir $RAW_DATA_DIR
-    cd $RAW_DATA_DIR
-
-    echo Downloading training dataset:
-    curl -# -o train.tar https://people.eecs.berkeley.edu/~nzhang/datasets/pipa_train.tar
-    tar -xvf train.tar
-    rm train.tar
-
-    echo Downloading test dataset:
-    curl -# -o test.tar https://people.eecs.berkeley.edu/~nzhang/datasets/pipa_test.tar
-    tar -xvf test.tar
-    rm test.tar
-
-    echo Downloading validation dataset:
-    curl -# -o val.tar https://people.eecs.berkeley.edu/~nzhang/datasets/pipa_val.tar
-    tar -xvf val.tar
-    rm val.tar
-
-    cd ..
-fi
+RAW_DATA_DIR=$1
 
 rm -rf A
 rm -rf B
