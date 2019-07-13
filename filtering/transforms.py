@@ -10,7 +10,10 @@ SEPIA_COL_FACTOR = 0.2
 SEPIA_BRIGHT_FACTOR = 0.1
 
 def grey(img):
-    return cv.cvtColor(img, cv.COLOR_RGB2GRAY)
+    img = cv.cvtColor(img, cv.COLOR_RGB2GRAY)
+    # make it 3 channel image for easier handling later
+    img = np.stack([img,img,img],axis=-1)
+    return img
 
 def sepia(img, color_factor, brightness_factor):
     # create basic sepia filter kernel
@@ -25,7 +28,12 @@ def sepia(img, color_factor, brightness_factor):
     # vary brightness slightly
     sepia = sepia * (np.random.rand() * brightness_factor + (1 - brightness_factor/2))
 
-    return cv.transform(img,sepia);
+
+    transf = cv.transform(img,sepia)
+
+    #transf = np.where(transf > 255,255,transf)
+
+    return transf;
 
 def vignette(img, sigma):
     vignette = cv.getGaussianKernel(img.shape[1],sigma)
@@ -34,9 +42,13 @@ def vignette(img, sigma):
 
     img_tmp = np.array(img,dtype=np.uint16)
 
-    img_tmp[:,:,0] = img[:,:,0] * vignette
-    img_tmp[:,:,1] = img[:,:,1] * vignette
-    img_tmp[:,:,2] = img[:,:,2] * vignette
+    # avoiding zeroing by making sure values do not go over 255
+    tmp = img[:,:,0] * vignette
+    img_tmp[:,:,0] = np.where(tmp > 255,255,img_tmp[:,:,0])
+    tmp = img[:,:,1] * vignette
+    img_tmp[:,:,1] = np.where(tmp > 255,255,img_tmp[:,:,1])
+    tmp = img[:,:,2] * vignette
+    img_tmp[:,:,2] = np.where(tmp > 255,255,img_tmp[:,:,2])
 
     img_tmp = 2*img_tmp + img
     img_tmp = np.array(img_tmp/3, dtype=np.uint8)
@@ -101,15 +113,16 @@ def overlay_artifacts(img, strength):
     return img
 
 def process_img(img):
-    if np.random.rand() < VIGNETTE_PROB:
-        img = vignette(img,VIGNETTE_SIGMA)
-
-    img = overlay_artifacts(img, np.random.rand() * OVERLAY_MAX_STRENGTH)
 
     if np.random.rand() < GRAY_PROB:
         img = grey(img)
     else:
         img = sepia(img, SEPIA_COL_FACTOR, SEPIA_BRIGHT_FACTOR)
+
+    if np.random.rand() < VIGNETTE_PROB:
+        img = vignette(img,VIGNETTE_SIGMA)
+
+    img = overlay_artifacts(img, np.random.rand() * OVERLAY_MAX_STRENGTH)
 
     return img
 
