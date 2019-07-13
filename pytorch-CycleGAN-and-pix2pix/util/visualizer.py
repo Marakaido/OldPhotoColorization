@@ -78,6 +78,10 @@ class Visualizer():
             self.vis = visdom.Visdom(server=opt.display_server, port=opt.display_port, env=opt.display_env)
             if not self.vis.check_connection():
                 self.create_visdom_connections()
+            self.plots = {}
+            self.smooth_plots = {}
+            self.alpha = 0.4
+            self.previous = {}
 
         if self.use_html:  # create an HTML object at <checkpoints_dir>/web/; images will be saved under <checkpoints_dir>/web/images/
             self.web_dir = os.path.join(opt.checkpoints_dir, opt.name, 'web')
@@ -192,18 +196,48 @@ class Visualizer():
         """
         if not hasattr(self, 'plot_data'):
             self.plot_data = {'X': [], 'Y': [], 'legend': list(losses.keys())}
-        self.plot_data['X'].append(epoch + counter_ratio)
+        x = epoch + counter_ratio
+        self.plot_data['X'].append(x)
         self.plot_data['Y'].append([losses[k] for k in self.plot_data['legend']])
+        
         try:
-            self.vis.line(
-                X=np.stack([np.array(self.plot_data['X'])] * len(self.plot_data['legend']), 1),
-                Y=np.array(self.plot_data['Y']),
-                opts={
-                    'title': self.name + ' loss over time',
-                    'legend': self.plot_data['legend'],
-                    'xlabel': 'epoch',
-                    'ylabel': 'loss'},
-                win=self.display_id)
+            for k in self.plot_data['legend']:
+                if k not in self.plots:
+                    self.plots[k] = self.vis.line(
+                        X=np.array([x]),
+                        Y=np.array([losses[k]]),
+                        opts={
+                            'title': f'{self.name} {k} loss over time',
+                            'legend': [k],
+                            'xlabel': 'epoch',
+                            'ylabel': 'loss'},
+                        win=f'{k} exact')
+                    self.smooth_plots[k] = self.vis.line(
+                        X=np.array([x]),
+                        Y=np.array([losses[k]]),
+                        opts={
+                            'title': f'{self.name} smooth {k} loss over time',
+                            'legend': [k],
+                            'xlabel': 'epoch',
+                            'ylabel': 'loss'},
+                        win=f'{k} smooth')
+                    self.previous[k] = losses[k]
+                else:
+                    new_value = self.alpha*self.previous[k] + (1.0 - self.alpha)*losses[k] 
+                    self.previous[k] = new_value
+                    self.vis.line(
+                        X=np.array([x]), 
+                        Y=np.array([losses[k]]), 
+                        win=f'{k} exact', 
+                        name=f'{k} exact', 
+                        update = 'append')
+                    self.vis.line(
+                        X=np.array([x]), 
+                        Y=np.array([new_value]), 
+                        win=f'{k} smooth', 
+                        name=f'{k} smooth', 
+                        update = 'append')
+            
         except VisdomExceptionBase:
             self.create_visdom_connections()
 
