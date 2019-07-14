@@ -62,7 +62,7 @@ class OldPhotosModel(BaseModel):
             self.netD = networks.define_D(opt.input_nc + opt.output_nc, opt.ndf, opt.netD,
                                           opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain, self.gpu_ids)
             self.netF = nn.Sequential(*list(self.netD.children())[:11])
-            self.feature_weights = [0.5, 0.3, 0.2]
+            self.feature_weights = [0.2, 0.3, 0.5]
 
         if self.isTrain:
             # define loss functions
@@ -118,7 +118,7 @@ class OldPhotosModel(BaseModel):
         # Third, features should be the same
         self.loss_D_feature = 0
         for i in range(3):
-            netF = nn.Sequential(*list(self.netD.children())[:(5 + 3*i)])
+            netF = nn.Sequential(*list(self.netD.children())[:-3*(i+1)])
             self.loss_D_feature += self.criterionFeature(netF(fake_AB), netF(real_AB)) * self.feature_weights[i]
         self.loss_D_feature *= self.opt.lambda_feature
         # combine loss and calculate gradients
