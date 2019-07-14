@@ -80,7 +80,7 @@ class Visualizer():
                 self.create_visdom_connections()
             self.plots = {}
             self.smooth_plots = {}
-            self.alpha = 0.4
+            self.alpha = 0.95
             self.previous = {}
 
         if self.use_html:  # create an HTML object at <checkpoints_dir>/web/; images will be saved under <checkpoints_dir>/web/images/
