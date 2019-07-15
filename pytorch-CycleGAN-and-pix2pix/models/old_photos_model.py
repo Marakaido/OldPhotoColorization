@@ -116,9 +116,13 @@ class OldPhotosModel(BaseModel):
         # Second, G(A) = B
         self.loss_G_L1 = self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_L1
         # Third, features should be the same
-        self.loss_D_feature = 0
-        for i in range(3):
-            netF = nn.Sequential(*list(self.netD.children())[:-3*(i+1)])
+        netF = nn.Sequential(*list(self.netD.module.model.children()))
+        self.loss_D_feature = self.criterionFeature(netF(fake_AB), netF(real_AB)) * self.feature_weights[0]
+        #print(f'Feature net:\n {netF}')
+        for i in range(1,3):
+            children = list(self.netD.module.model.children())[:-3*i]
+            netF = nn.Sequential(*children)
+            #print(f'Feature net:\n {netF}')
             self.loss_D_feature += self.criterionFeature(netF(fake_AB), netF(real_AB)) * self.feature_weights[i]
         self.loss_D_feature *= self.opt.lambda_feature
         # combine loss and calculate gradients
