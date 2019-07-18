@@ -1,0 +1,47 @@
+#!/bin/bash
+# Usage:
+# bash evaluate.sh raw_data_folder target_folder
+
+RAW_DATA_DIR=$1
+
+rm -rf A
+rm -rf B
+mkdir A
+mkdir A/train
+mkdir A/test
+mkdir A/val
+mkdir B
+mkdir B/train
+mkdir B/test
+mkdir B/val
+
+python - $RAW_DATA_DIR << END
+import glob
+import sys
+import cv2
+import numpy as np
+from filtering import transforms
+
+folder = sys.argv[1]
+np.random.seed(0)
+
+for t in ['train', 'test', 'val']:
+    print(f'Processing folder {t}...')
+    images = sorted(glob.glob(f'{folder}/{t}/*.jpg'))
+    for i, image in enumerate(images):
+        name = f'{i}.jpg'
+        print(f'{image} --> {name}')
+        img = cv2.imread(image)
+        img = cv2.resize(img, (256,256))
+        
+        # Save images
+        cv2.imwrite(f'B/{t}/{name}', img)
+        cv2.imwrite(f'A/{t}/{name}', img)
+END
+
+rm -rf $2
+mkdir $2
+python pytorch-CycleGAN-and-pix2pix/datasets/combine_A_and_B.py --fold_A A --fold_B B --fold_AB $2
+
+rm -rf A
+rm -rf B

@@ -23,5 +23,3 @@ python pytorch-CycleGAN-and-pix2pix/datasets/combine_A_and_B.py --fold_A A --fol
 
 rm -rf A
 rm -rf B
-
-cd $SOURCE_DIR
